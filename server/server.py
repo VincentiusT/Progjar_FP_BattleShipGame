@@ -18,12 +18,14 @@ def read_msg(clients, sock_cli, addr_cli, username_cli):
         if isinstance(obj, Chat):
             if obj.type_id == "message":
                 dest_sock_cli = get_sock(username_cli, obj.dest)
-                dest_sock_cli.send(pickle.dumps(Chat(username_cli, 'message', obj.msg)))
+                if dest_sock_cli:
+                    dest_sock_cli.send(pickle.dumps(Chat(username_cli, 'message', obj.msg)))
             elif obj.type_id == "bcast":
                 send_bcast(username_cli, obj.msg)
             elif obj.type_id == "file":
                 dest_sock_cli = get_sock(username_cli, obj.dest)
-                dest_sock_cli.send(pickle.dumps(Chat(username_cli, 'file', obj.msg)))
+                if dest_sock_cli:
+                    dest_sock_cli.send(pickle.dumps(Chat(username_cli, 'file', obj.msg)))
             elif obj.type_id == "reqfriend":
                 dest_uname = obj.dest
                 if dest_uname not in clients:
@@ -99,6 +101,9 @@ def send_bcast(src_uname, msg):
         if cur_friend not in clients:
             continue
         if cur_friend == src_uname:
+            print('curfriend srcuname')
+            print(cur_friend)
+            print(src_uname)
             continue
 
         dest_sock_cli = clients[cur_friend][0]
@@ -130,7 +135,8 @@ def send_error(uname, msg):
     dest_sock_cli = clients[uname][0]
     dest_sock_cli.send(pickle.dumps(Chat('System', 'message', msg)))
 
-server_address = ('192.168.0.106', 80)
+# server_address = ('192.168.0.106', 80)
+server_address = ('localhost', 80)
 server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 server_socket.bind(server_address)
