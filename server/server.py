@@ -63,9 +63,21 @@ def read_msg(clients, sock_cli, addr_cli, username_cli):
                 dest_sock_cli.send(nextTurn)
             elif obj.msg == "join":
                 dest_sock_cli = clients[obj.dest][0]
-                Rooms[obj.dest] = "full"
-                startTurn = pickle.dumps(Message(username_cli,"accepted"))
-                dest_sock_cli.send(startTurn)
+                if Rooms[obj.dest] == "full":
+                    roomFull = pickle.dumps(Message(username_cli,"roomFull"))
+                    sock_cli.send(roomFull)
+                else:
+                    Rooms[obj.dest] = "full"
+                    startTurn = pickle.dumps(Message(username_cli,"accepted"))
+                    dest_sock_cli.send(startTurn)
+            elif obj.msg == "gameOver":
+                if obj.dest in Rooms:
+                    Rooms.pop(obj.dest)
+                elif username_cli in Rooms:
+                    Rooms.pop(username_cli)
+                dest_sock_cli = clients[obj.dest][0]
+                youWin = pickle.dumps(Message(username_cli, "win"))
+                dest_sock_cli.send(youWin)
 
         elif isinstance(obj, ListRoom):
             giveListRoom = pickle.dumps(ListRoom(username_cli, Rooms))

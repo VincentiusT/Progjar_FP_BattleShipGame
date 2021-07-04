@@ -35,7 +35,7 @@ def receive_msg(sock_cli):
                 print(f"Friend request from {friend}\n"
                 f"type: 'accfriend {friend}' to accept friend request")
         else:
-            return receive_attack(sock_cli, obj)
+            receive_attack(sock_cli, obj)
 
 def get_input_prior(prompt_msg = ''):
     inputted_msg = input(prompt_msg)
@@ -124,7 +124,15 @@ def receive_attack(sock_cli, obj):
             myturn = True
         elif obj.msg == "roomCreated":
             print("room is created!\n")
-
+        elif obj.msg == "roomFull":
+            print("room is full")
+        elif obj.msg == "win":
+            print("--YOU WIN--\n")
+            canPlay=False
+            global isReady
+            isReady=False
+            global inRoom
+            inRoom = False
     if isinstance(obj, ListRoom):
         print("room list:\n")
         room_list = obj.roomList.items()
@@ -148,11 +156,15 @@ def check_attack(x,y):
         atkSuccess = pickle.dumps(Message(opponent, "attackSuccess"))
         sock_cli.send(atkSuccess)
         if totalShip <= 0:
-            print("all of your ships have been destroyed!")
+            gameOver = pickle.dumps(Message(opponent, "gameOver"))
+            sock_cli.send(gameOver)
+            print("--YOU LOSE--\nall of your ships have been destroyed!")
             global canPlay
             canPlay=False
             global isReady
             isReady=False
+            global inRoom
+            inRoom = False
     elif arena[x][y] == 0:
         print("your ship is safe!")
         arena[x][y] = 2
@@ -301,7 +313,7 @@ try:
     while True:
         if isReady == False:
             if not inRoom:
-                msg = get_input_prior("BattleShip Game:\n-invite <username>\n-accept <username> \n-create room\n-join <roomname>\n-list room\n ")
+                msg = get_input_prior("BattleShip Game:\n-create room\n-join <roomname>\n-list room\n-help (for chat and friends)\n")
                 msg = msg.split(" ")
                 if msg[0] == "accept":
                     print("invitation accepted!\n")
