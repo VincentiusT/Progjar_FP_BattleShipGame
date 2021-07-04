@@ -1,4 +1,4 @@
-from DefClass import Attack, Message, Chat
+from DefClass import Attack, Message, Chat, RecordBoard, Room, ListRoom
 import socket
 import sys
 import threading
@@ -31,15 +31,8 @@ def read_msg(clients, sock_cli, addr_cli, username_cli):
                 else:
                     dest_sock_cli = clients[dest_uname][0]
                     dest_sock_cli.send(pickle.dumps(Chat(username_cli, 'reqfriend', '')))
-                # dest_sock_cli = get_sock(username_cli, obj.dest)
-                # dest_sock_cli.send(pickle.dumps(Chat(username_cli, 'file', obj.msg)))
             elif obj.type_id == "accfriend":
-                add_friend(src_uname, obj.dest)
-                src_uname = username_cli
-                friends[src_uname].append(dest_username)
-                friends[dest_username].append(src_uname)
-                dest_sock_cli = get_sock(username_cli, obj.dest)
-                dest_sock_cli.send(pickle.dumps(Chat(username_cli, 'message', obj.msg)))
+                add_friend(username_cli, obj.dest)
 
         elif isinstance(obj, Message):
             if obj.msg == "invite":
@@ -47,6 +40,7 @@ def read_msg(clients, sock_cli, addr_cli, username_cli):
                 invitePlayer = pickle.dumps(Message(username_cli,"invite"))
                 dest_sock_cli.send(invitePlayer)
             elif obj.msg == "ready":
+                dest_sock_cli = clients[obj.dest][0]
                 ready = pickle.dumps(Message(username_cli,"ready"))
                 dest_sock_cli.send(ready)
             elif obj.msg == "accept":
@@ -65,11 +59,34 @@ def read_msg(clients, sock_cli, addr_cli, username_cli):
                 dest_sock_cli = clients[obj.dest][0]
                 nextTurn = pickle.dumps(Message(username_cli, "startTurn"))
                 dest_sock_cli.send(nextTurn)
+            elif obj.msg == "join":
+                dest_sock_cli = clients[obj.dest][0]
+                Rooms[obj.dest] = "full"
+                startTurn = pickle.dumps(Message(username_cli,"accepted"))
+                dest_sock_cli.send(startTurn)
+
+        elif isinstance(obj, ListRoom):
+            giveListRoom = pickle.dumps(ListRoom(username_cli, Rooms))
+            sock_cli.send(giveListRoom)
 
         elif isinstance(obj, Attack):
             dest_sock_cli = clients[obj.dest][0]
             atkCoordinate = pickle.dumps(Attack(obj.dest, obj.coordinateX, obj.coordinateY))
             dest_sock_cli.send(atkCoordinate)
+
+        elif isinstance(obj, RecordBoard):
+            dest_sock_cli = clients[obj.dest][0]
+            newRecordBoard = pickle.dumps(RecordBoard(obj.dest, obj.coordinateX, obj.coordinateY, obj.value))
+            dest_sock_cli.send(newRecordBoard)
+        
+        elif isinstance(obj, Room):
+            Rooms[obj.roomname] = "empty"
+            print("room list:\n")
+            room_list = Rooms.items()
+            for item in room_list:
+                print(item)
+            roomCreated = pickle.dumps(Message(username_cli, "roomCreated"))
+            sock_cli.send(roomCreated) 
 
     sock_cli.close()
     print("connection closed", addr_cli)
@@ -122,6 +139,7 @@ server_socket.listen(5)
 # buat dictionary utk menyimpan informasi
 clients = {}
 friends = {}
+Rooms = {}
 
 try:
     while True:
