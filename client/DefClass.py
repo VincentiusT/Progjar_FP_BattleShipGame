@@ -9,3 +9,8 @@ class Attack:
         self.coordinateX = coordinateX
         self.coordinateY = coordinateY
 
+class Chat:
+    def __init__(self, dest, type_id, msg):
+        self.dest = dest
+        self.type_id = type_id
+        self.msg = msg
